@@ -1,69 +1,385 @@
-import Image from "next/image";
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import { apiFetch } from "@/lib/api";
+
+interface Event {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  eventDate: string;
+  image: string;
+  category: string;
+}
 
 export default function Home() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchRecentEvents = async () => {
+      try {
+        const data = await apiFetch("/api/events");
+
+        setEvents((data.events || []).slice(0, 6));
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+        setError("Events load করা সম্ভব হয়নি। পরে আবার চেষ্টা করো।");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentEvents();
+  }, []);
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-BD", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <Navbar />
+
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-green-800 via-green-700 to-emerald-500 px-6 py-24 text-white">
+          <div className="mx-auto max-w-7xl text-center">
+            <span className="mb-5 inline-block rounded-full border border-white/30 bg-white/10 px-5 py-2 text-sm">
+              Together for a Better Tomorrow
+            </span>
+
+            <h1 className="mb-6 text-4xl font-bold md:text-6xl">
+              Together We Serve,
+              <br />
+              Together We Grow.
+            </h1>
+
+            <p className="mx-auto mb-8 max-w-2xl text-lg text-green-50">
+              Join HelpingHands and make a positive difference in your
+              community. Discover events, connect with volunteers and
+              help create a better tomorrow.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link
+                href="/events"
+                className="rounded-lg bg-white px-7 py-3 font-semibold text-green-700 transition hover:bg-gray-100"
+              >
+                Explore Events
+              </Link>
+
+              <Link
+                href="/register"
+                className="rounded-lg border border-white px-7 py-3 font-semibold text-white transition hover:bg-white hover:text-green-700"
+              >
+                Join Us
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="mx-auto max-w-7xl px-6 py-20">
+          <div className="mb-12 text-center">
+            <p className="mb-3 font-semibold text-green-600">
+              WHAT WE DO
+            </p>
+
+            <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-white">
+              Make a Difference Together
+            </h2>
+
+            <p className="mx-auto max-w-2xl text-gray-600 dark:text-gray-300">
+              HelpingHands connects people who want to help with
+              meaningful community development events.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {[
+              {
+                icon: "🤝",
+                title: "Volunteer",
+                description:
+                  "Participate in activities and support your community.",
+              },
+              {
+                icon: "🌱",
+                title: "Create Events",
+                description:
+                  "Organize meaningful events and invite others to join.",
+              },
+              {
+                icon: "❤️",
+                title: "Help Others",
+                description:
+                  "Work together to build a stronger and kinder community.",
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-2xl bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-gray-900"
+              >
+                <div className="mb-4 text-5xl">{feature.icon}</div>
+
+                <h3 className="mb-3 text-xl font-bold text-gray-800 dark:text-white">
+                  {feature.title}
+                </h3>
+
+                <p className="text-gray-600 dark:text-gray-300">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Recent Events Section */}
+        <section className="bg-green-50 px-6 py-20 dark:bg-gray-900">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-12 text-center">
+              <p className="mb-3 font-semibold text-green-600">
+                JOIN OUR COMMUNITY
+              </p>
+
+              <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-white">
+                Recent Upcoming Events
+              </h2>
+
+              <p className="text-gray-600 dark:text-gray-300">
+                Discover events and become part of something meaningful.
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="animate-pulse overflow-hidden rounded-xl bg-white shadow dark:bg-gray-800"
+                  >
+                    <div className="h-52 bg-gray-200 dark:bg-gray-700" />
+                    <div className="space-y-3 p-6">
+                      <div className="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <p className="py-10 text-center text-red-500">{error}</p>
+            ) : events.length === 0 ? (
+              <p className="py-10 text-center text-gray-600 dark:text-gray-300">
+                No upcoming events available right now.
+              </p>
+            ) : (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {events.map((event) => (
+                  <article
+                    key={event._id}
+                    className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-gray-800"
+                  >
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="h-52 w-full object-cover"
+                    />
+
+                    <div className="p-6">
+                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900 dark:text-green-200">
+                        {event.category}
+                      </span>
+
+                      <h3 className="mt-4 mb-2 text-xl font-bold text-gray-800 dark:text-white">
+                        {event.title}
+                      </h3>
+
+                      <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
+                        {event.description}
+                      </p>
+
+                      <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                        📅 {formatDate(event.eventDate)}
+                      </div>
+
+                      <div className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+                        📍 {event.location}
+                      </div>
+
+                      <Link
+                        href={`/events/${event._id}`}
+                        className="inline-block rounded-lg bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/events"
+                className="inline-block rounded-lg border border-green-700 px-7 py-3 font-semibold text-green-700 transition hover:bg-green-700 hover:text-white dark:border-green-500 dark:text-green-400"
+              >
+                View All Events →
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Gallery Section */}
+        <section className="mx-auto max-w-7xl px-6 py-20">
+          <div className="mb-12 text-center">
+            <p className="mb-3 font-semibold text-green-600">
+              OUR MEMORIES
+            </p>
+
+            <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-white">
+              Moments of Kindness
+            </h2>
+
+            <p className="text-gray-600 dark:text-gray-300">
+              Small actions can create a big difference.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                image:
+                  "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800",
+                title: "Community Volunteering",
+              },
+              {
+                image:
+                  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800",
+                title: "Plantation Campaign",
+              },
+              {
+                image:
+                  "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800",
+                title: "Helping Children",
+              },
+              {
+                image:
+                  "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800",
+                title: "Volunteer Together",
+              },
+              {
+                image:
+                  "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?w=800",
+                title: "Community Support",
+              },
+              {
+                image:
+                  "https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=800",
+                title: "A Better Tomorrow",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="group relative overflow-hidden rounded-xl"
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="h-64 w-full object-cover transition duration-500 group-hover:scale-110"
+                />
+
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-6">
+                  <h3 className="text-xl font-semibold text-white">
+                    {item.title}
+                  </h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Newsletter Section - Design Only */}
+        <section className="bg-green-800 px-6 py-20 text-center text-white">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-5 text-5xl">📩</div>
+
+            <h2 className="mb-4 text-3xl font-bold">
+              Stay Connected With Us
+            </h2>
+
+            <p className="mb-8 text-green-100">
+              Be inspired by our activities, discover upcoming events
+              and stay connected with our community.
+            </p>
+
+            <div className="mx-auto flex max-w-xl flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                className="min-w-0 flex-1 rounded-lg bg-white px-5 py-3 text-gray-800 outline-none"
+                disabled
+              />
+
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-lg bg-gray-300 px-7 py-3 font-semibold text-gray-600"
+              >
+                Coming Soon
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-green-200">
+              Newsletter subscription is currently a design preview.
+            </p>
+          </div>
+        </section>
+
+        {/* Call to Action */}
+        <section className="bg-green-50 px-6 py-16 text-center dark:bg-gray-900">
+          <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-white">
+            Be Part of Something Good
+          </h2>
+
+          <p className="mb-7 text-gray-600 dark:text-gray-300">
+            Start your journey with HelpingHands today.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <Link
+            href="/register"
+            className="inline-block rounded-lg bg-green-700 px-8 py-3 font-semibold text-white hover:bg-green-800"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            Get Started
+          </Link>
+        </section>
       </main>
-    </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-950 px-6 py-8 text-center text-gray-300">
+        <h3 className="mb-2 text-xl font-bold text-white">
+          HelpingHands
+        </h3>
+
+        <p>
+          © 2026 HelpingHands. All rights reserved.
+        </p>
+
+        <p className="mt-2 text-sm text-gray-400">
+          Together We Serve, Together We Grow.
+        </p>
+      </footer>
+    </>
   );
 }
