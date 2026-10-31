@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { apiFetch } from "@/lib/api";
@@ -16,30 +16,121 @@ interface Event {
   category: string;
 }
 
+const galleryItems = [
+  {
+    image:
+      "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800",
+    title: "Community Volunteering",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800",
+    title: "Plantation Campaign",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800",
+    title: "Helping Children",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800",
+    title: "Volunteer Together",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?w=800",
+    title: "Community Support",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=800",
+    title: "A Better Tomorrow",
+  },
+];
+
+const features = [
+  {
+    icon: "🤝",
+    title: "Volunteer",
+    description:
+      "Participate in activities and support your community.",
+  },
+  {
+    icon: "🌱",
+    title: "Create Events",
+    description:
+      "Organize meaningful events and invite others to join.",
+  },
+  {
+    icon: "❤️",
+    title: "Help Others",
+    description:
+      "Work together to build a stronger and kinder community.",
+  },
+];
+
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  const fetchRecentEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await apiFetch("/api/events");
+
+      if (!data.success || !Array.isArray(data.events)) {
+        throw new Error("Invalid events response");
+      }
+
+      const now = new Date();
+
+      const upcomingEvents = (data.events as Event[])
+        .filter((event) => {
+          const date = new Date(event.eventDate);
+
+          return (
+            !Number.isNaN(date.getTime()) &&
+            date.getTime() > now.getTime()
+          );
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.eventDate).getTime() -
+            new Date(b.eventDate).getTime()
+        )
+        .slice(0, 6);
+
+      setEvents(upcomingEvents);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+      setError("Events load করা সম্ভব হয়নি। আবার চেষ্টা করো।");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchRecentEvents = async () => {
-      try {
-        const data = await apiFetch("/api/events");
-
-        setEvents((data.events || []).slice(0, 6));
-      } catch (err) {
-        console.error("Failed to fetch events:", err);
-        setError("Events load করা সম্ভব হয়নি। পরে আবার চেষ্টা করো।");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRecentEvents();
+  }, [fetchRecentEvents]);
+
+  // Set the current year after the component mounts.
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
   }, []);
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-BD", {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Date unavailable";
+    }
+
+    return parsedDate.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -51,7 +142,6 @@ export default function Home() {
       <Navbar />
 
       <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
-
         {/* Hero Section */}
         <section className="bg-gradient-to-r from-green-800 via-green-700 to-emerald-500 px-6 py-24 text-white">
           <div className="mx-auto max-w-7xl text-center">
@@ -65,7 +155,7 @@ export default function Home() {
               Together We Grow.
             </h1>
 
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-green-50">
+            <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-green-50">
               Join HelpingHands and make a positive difference in your
               community. Discover events, connect with volunteers and
               help create a better tomorrow.
@@ -107,31 +197,14 @@ export default function Home() {
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                icon: "🤝",
-                title: "Volunteer",
-                description:
-                  "Participate in activities and support your community.",
-              },
-              {
-                icon: "🌱",
-                title: "Create Events",
-                description:
-                  "Organize meaningful events and invite others to join.",
-              },
-              {
-                icon: "❤️",
-                title: "Help Others",
-                description:
-                  "Work together to build a stronger and kinder community.",
-              },
-            ].map((feature) => (
+            {features.map((feature) => (
               <div
                 key={feature.title}
                 className="rounded-2xl bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-gray-900"
               >
-                <div className="mb-4 text-5xl">{feature.icon}</div>
+                <div className="mb-4 text-5xl">
+                  {feature.icon}
+                </div>
 
                 <h3 className="mb-3 text-xl font-bold text-gray-800 dark:text-white">
                   {feature.title}
@@ -145,7 +218,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Recent Events Section */}
+        {/* Recent Upcoming Events */}
         <section className="bg-green-50 px-6 py-20 dark:bg-gray-900">
           <div className="mx-auto max-w-7xl">
             <div className="mb-12 text-center">
@@ -170,20 +243,34 @@ export default function Home() {
                     className="animate-pulse overflow-hidden rounded-xl bg-white shadow dark:bg-gray-800"
                   >
                     <div className="h-52 bg-gray-200 dark:bg-gray-700" />
+
                     <div className="space-y-3 p-6">
                       <div className="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
                       <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700" />
                       <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-10 rounded bg-gray-200 dark:bg-gray-700" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : error ? (
-              <p className="py-10 text-center text-red-500">{error}</p>
+              <div className="py-10 text-center">
+                <p className="mb-4 text-red-500">{error}</p>
+
+                <button
+                  type="button"
+                  onClick={fetchRecentEvents}
+                  className="rounded-lg bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                >
+                  Try Again
+                </button>
+              </div>
             ) : events.length === 0 ? (
-              <p className="py-10 text-center text-gray-600 dark:text-gray-300">
-                No upcoming events available right now.
-              </p>
+              <div className="py-10 text-center">
+                <p className="text-gray-600 dark:text-gray-300">
+                  No upcoming events available right now.
+                </p>
+              </div>
             ) : (
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((event) => (
@@ -192,8 +279,9 @@ export default function Home() {
                     className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-gray-800"
                   >
                     <img
-                      src={event.image}
+                      src={event.image || "/placeholder.png"}
                       alt={event.title}
+                      loading="lazy"
                       className="h-52 w-full object-cover"
                     />
 
@@ -202,7 +290,7 @@ export default function Home() {
                         {event.category}
                       </span>
 
-                      <h3 className="mt-4 mb-2 text-xl font-bold text-gray-800 dark:text-white">
+                      <h3 className="mb-2 mt-4 text-xl font-bold text-gray-800 dark:text-white">
                         {event.title}
                       </h3>
 
@@ -258,38 +346,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                image:
-                  "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800",
-                title: "Community Volunteering",
-              },
-              {
-                image:
-                  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800",
-                title: "Plantation Campaign",
-              },
-              {
-                image:
-                  "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800",
-                title: "Helping Children",
-              },
-              {
-                image:
-                  "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800",
-                title: "Volunteer Together",
-              },
-              {
-                image:
-                  "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?w=800",
-                title: "Community Support",
-              },
-              {
-                image:
-                  "https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=800",
-                title: "A Better Tomorrow",
-              },
-            ].map((item) => (
+            {galleryItems.map((item) => (
               <div
                 key={item.title}
                 className="group relative overflow-hidden rounded-xl"
@@ -297,6 +354,7 @@ export default function Home() {
                 <img
                   src={item.image}
                   alt={item.title}
+                  loading="lazy"
                   className="h-64 w-full object-cover transition duration-500 group-hover:scale-110"
                 />
 
@@ -310,7 +368,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Newsletter Section - Design Only */}
+        {/* Newsletter Section */}
         <section className="bg-green-800 px-6 py-20 text-center text-white">
           <div className="mx-auto max-w-3xl">
             <div className="mb-5 text-5xl">📩</div>
@@ -328,8 +386,9 @@ export default function Home() {
               <input
                 type="email"
                 placeholder="Enter your email address"
-                className="min-w-0 flex-1 rounded-lg bg-white px-5 py-3 text-gray-800 outline-none"
+                aria-label="Email address"
                 disabled
+                className="min-w-0 flex-1 rounded-lg bg-white px-5 py-3 text-gray-800 outline-none disabled:cursor-not-allowed"
               />
 
               <button
@@ -359,7 +418,7 @@ export default function Home() {
 
           <Link
             href="/register"
-            className="inline-block rounded-lg bg-green-700 px-8 py-3 font-semibold text-white hover:bg-green-800"
+            className="inline-block rounded-lg bg-green-700 px-8 py-3 font-semibold text-white transition hover:bg-green-800"
           >
             Get Started
           </Link>
@@ -373,7 +432,7 @@ export default function Home() {
         </h3>
 
         <p>
-          © 2026 HelpingHands. All rights reserved.
+          © {currentYear ?? 2026} HelpingHands. All rights reserved.
         </p>
 
         <p className="mt-2 text-sm text-gray-400">
