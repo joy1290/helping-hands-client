@@ -15,6 +15,12 @@ interface Event {
   category: string;
 }
 
+interface EventsResponse {
+  success: boolean;
+  events: Event[];
+  message?: string;
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,30 +31,37 @@ export default function EventsPage() {
       setLoading(true);
       setError("");
 
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL ||
+        "http://localhost:5000"
+      ).replace(/\/+$/, "");
 
       const response = await fetch(`${apiUrl}/api/events`, {
         method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
         cache: "no-store",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch events");
+        throw new Error(
+          `Events request failed: ${response.status} ${response.statusText}`
+        );
       }
 
-      const data = await response.json();
+      const data: EventsResponse = await response.json();
 
       if (!data.success || !Array.isArray(data.events)) {
-        throw new Error("Invalid events response");
+        throw new Error("Invalid events API response");
       }
 
-      // Only show future events and sort by nearest date.
       const now = new Date();
 
-      const upcomingEvents = (data.events as Event[])
+      const upcomingEvents = data.events
         .filter((event) => {
           const eventDate = new Date(event.eventDate);
+
           return (
             !Number.isNaN(eventDate.getTime()) &&
             eventDate > now
@@ -63,7 +76,18 @@ export default function EventsPage() {
       setEvents(upcomingEvents);
     } catch (err) {
       console.error("Events fetch error:", err);
-      setError("Events load করা যাচ্ছে না। আবার চেষ্টা করো।");
+
+      setEvents([]);
+
+      if (err instanceof TypeError) {
+        setError(
+          "Backend-এর সঙ্গে সংযোগ করা যাচ্ছে না। API URL এবং CORS configuration পরীক্ষা করো।"
+        );
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Events load করা যাচ্ছে না। আবার চেষ্টা করো।");
+      }
     } finally {
       setLoading(false);
     }
@@ -79,6 +103,7 @@ export default function EventsPage() {
 
       <main className="min-h-screen bg-gray-50 px-4 py-12 transition-colors duration-300 sm:px-6 dark:bg-gray-950">
         <div className="mx-auto max-w-7xl">
+          {/* Header */}
           <div className="mb-10 text-center">
             <h1 className="mb-3 text-4xl font-bold text-gray-800 dark:text-white">
               Upcoming Events
@@ -89,6 +114,7 @@ export default function EventsPage() {
             </p>
           </div>
 
+          {/* Loading */}
           {loading && (
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
@@ -97,6 +123,7 @@ export default function EventsPage() {
                   className="animate-pulse overflow-hidden rounded-xl bg-white shadow-md dark:bg-gray-900"
                 >
                   <div className="h-52 bg-gray-200 dark:bg-gray-800" />
+
                   <div className="space-y-4 p-6">
                     <div className="h-5 w-24 rounded bg-gray-200 dark:bg-gray-800" />
                     <div className="h-6 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
@@ -109,7 +136,8 @@ export default function EventsPage() {
             </div>
           )}
 
-          {error && (
+          {/* Error */}
+          {!loading && error && (
             <div className="py-16 text-center">
               <p className="mb-4 text-red-600 dark:text-red-400">
                 {error}
@@ -124,21 +152,25 @@ export default function EventsPage() {
             </div>
           )}
 
+          {/* Empty State */}
           {!loading && !error && events.length === 0 && (
             <div className="py-16 text-center">
               <p className="mb-3 text-xl font-semibold text-gray-700 dark:text-gray-200">
                 No upcoming events available right now.
               </p>
+
               <p className="text-gray-500 dark:text-gray-400">
                 Please check back later for new events.
               </p>
             </div>
           )}
 
+          {/* Events */}
           {!loading && !error && events.length > 0 && (
             <>
               <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-                {events.length} upcoming event{events.length !== 1 ? "s" : ""} found
+                {events.length} upcoming event
+                {events.length !== 1 ? "s" : ""} found
               </p>
 
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">

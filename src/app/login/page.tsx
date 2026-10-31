@@ -16,13 +16,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-green-500 dark:focus:ring-green-900";
-
-  const labelClass =
-    "mb-2 block font-medium text-gray-700 dark:text-gray-200";
+    "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white";
 
   const validateForm = () => {
     if (!email.trim() || !password) {
@@ -38,9 +34,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setError("");
-    setSuccess("");
 
     const validationError = validateForm();
 
@@ -65,21 +59,18 @@ export default function LoginPage() {
       const session = await authClient.getSession();
 
       if (session.error || !session.data?.user) {
-        setError("Session could not be verified. Please try again.");
+        setError("Session verification failed.");
         return;
       }
 
-      setSuccess("Login successful! Welcome to HelpingHands.");
-
       router.replace("/");
       router.refresh();
-    } catch (err) {
-      console.error("LOGIN ERROR:", err);
-
+    } catch (error) {
+      console.error("Login error:", error);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong."
       );
     } finally {
       setLoading(false);
@@ -88,7 +79,6 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setError("");
-    setSuccess("");
     setGoogleLoading(true);
 
     try {
@@ -101,9 +91,8 @@ export default function LoginPage() {
         setError(result.error.message || "Google login failed.");
         setGoogleLoading(false);
       }
-    } catch (err) {
-      console.error("GOOGLE LOGIN ERROR:", err);
-
+    } catch (error) {
+      console.error("Google login error:", error);
       setError("Google login failed. Please try again.");
       setGoogleLoading(false);
     }
@@ -125,12 +114,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="email" className={labelClass}>
+              <label className="mb-2 block font-medium text-gray-700 dark:text-gray-200">
                 Email Address
               </label>
 
               <input
-                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -142,12 +130,11 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className={labelClass}>
+              <label className="mb-2 block font-medium text-gray-700 dark:text-gray-200">
                 Password
               </label>
 
               <input
-                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -167,19 +154,10 @@ export default function LoginPage() {
               </div>
             )}
 
-            {success && (
-              <div
-                role="status"
-                className="rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300"
-              >
-                ✓ {success}
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full rounded-lg bg-green-700 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-green-700 py-3 font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
             >
               {loading ? "Logging in..." : "Login"}
             </button>
@@ -195,35 +173,16 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading || googleLoading}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white py-3 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white py-3 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 48 48"
-              aria-hidden="true"
-            >
-              <path
-                fill="#EA4335"
-                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
-              />
-              <path
-                fill="#4285F4"
-                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.72 7.18l7.19 5.59c4.2-3.88 6.57-9.59 6.57-17.24Z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"
-              />
-              <path
-                fill="#34A853"
-                d="M24 48c6.48 0 11.93-2.13 15.9-5.79l-7.19-5.59c-1.99 1.34-4.53 2.13-8.71 2.13-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 43.62 14.62 48 24 48Z"
-              />
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.72 7.18l7.19 5.59c4.2-3.88 6.57-9.59 6.57-17.24Z" />
+              <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z" />
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.79l-7.19-5.59c-1.99 1.34-4.53 2.13-8.71 2.13-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 43.62 14.62 48 24 48Z" />
             </svg>
 
-            {googleLoading
-              ? "Connecting to Google..."
-              : "Continue with Google"}
+            {googleLoading ? "Connecting..." : "Continue with Google"}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
