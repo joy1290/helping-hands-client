@@ -30,11 +30,6 @@ export async function apiFetch(
   if (requiresAuth) {
     const result = await authClient.token();
 
-    console.log("JWT TOKEN STATUS:", {
-      hasToken: Boolean(result.data?.token),
-      error: result.error,
-    });
-
     if (result.error || !result.data?.token) {
       throw new Error("JWT token পাওয়া যায়নি। আবার Login করো।");
     }
@@ -44,17 +39,31 @@ export async function apiFetch(
       `Bearer ${result.data.token}`
     );
   }
-console.log("AUTH HEADER ADDED:", requestHeaders.has("Authorization"));
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...fetchOptions,
-    headers: requestHeaders,
-    credentials: "include",
-  });
 
-  const data = await response.json();
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...fetchOptions,
+      headers: requestHeaders,
+      credentials: "include",
+    });
+  } catch {
+    throw new Error(
+      "Server-এর সঙ্গে সংযোগ করা যাচ্ছে না। আবার চেষ্টা করো।"
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+
+  const data = contentType?.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
-    throw new Error(data.message || "API request failed");
+    throw new Error(
+      data?.message || `API request failed (${response.status})`
+    );
   }
 
   return data;
