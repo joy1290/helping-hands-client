@@ -83,7 +83,7 @@ function EventDetailsContent() {
     };
   }, [id]);
 
-  // Check whether user has joined
+  // Check whether user has already joined
   useEffect(() => {
     if (!event || !session) {
       setIsJoined(false);
@@ -102,8 +102,7 @@ function EventDetailsContent() {
       return;
     }
 
-    // Prevent duplicate requests
-    if (joining || isJoined) return;
+    if (joining) return;
 
     setJoining(true);
     setMessage("");
@@ -115,6 +114,7 @@ function EventDetailsContent() {
         requiresAuth: true,
       });
 
+      // Update joined status
       setIsJoined(true);
 
       setEvent((previous) =>
@@ -131,16 +131,24 @@ function EventDetailsContent() {
           : null
       );
 
+      // First-time join success
       setMessage(
-        data.message || "You joined this event successfully!"
+        data.message || "You joined the event successfully!"
       );
       setMessageType("success");
     } catch (err) {
-      setMessage(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong."
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "";
+
+      if (
+        errorMessage.toLowerCase().includes("already joined")
+      ) {
+        setIsJoined(true);
+        setMessage("You have already joined this event!");
+      } else {
+        setMessage(errorMessage || "Something went wrong.");
+      }
+
       setMessageType("error");
     } finally {
       setJoining(false);
@@ -239,11 +247,11 @@ function EventDetailsContent() {
                     <p className="rounded-lg bg-gray-100 p-4 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                       This event has already passed.
                     </p>
-                  ) : isJoined ? (
+                  ) : isJoined && !message ? (
                     <p className="rounded-lg bg-green-50 p-4 font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
                       ✓ You have already joined this event!
                     </p>
-                  ) : (
+                  ) : !isJoined ? (
                     <button
                       onClick={handleJoinEvent}
                       disabled={joining}
@@ -251,8 +259,9 @@ function EventDetailsContent() {
                     >
                       {joining ? "Joining..." : "Join This Event"}
                     </button>
-                  )}
+                  ) : null}
 
+                  {/* Show only one message */}
                   {message && (
                     <p
                       role="status"
