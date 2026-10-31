@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authClient, signUp } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import Navbar from "@/components/Navbar";
 
 export default function RegisterPage() {
@@ -23,29 +23,64 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain an uppercase letter.");
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      setError("Password must contain a lowercase letter.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error } = await signUp.email({
-        name,
-        email,
+      const result = await authClient.signUp.email({
+        name: trimmedName,
+        email: trimmedEmail,
         password,
       });
 
-      if (error) {
-        setError(error.message || "Registration failed.");
+      if (result.error) {
+        setError(
+          result.error.message || "Registration failed."
+        );
         return;
       }
 
-      router.push("/");
+      const session = await authClient.getSession();
+
+      if (session.error || !session.data?.user) {
+        setError(
+          "Account created, but session could not be verified. Please login."
+        );
+        return;
+      }
+
+      router.replace("/");
       router.refresh();
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      console.error("REGISTER ERROR:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -58,14 +93,19 @@ export default function RegisterPage() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL:
+          "https://helping-hands-client-five.vercel.app/",
       });
 
       if (result.error) {
-        setError(result.error.message || "Google registration failed.");
+        setError(
+          result.error.message || "Google registration failed."
+        );
         setGoogleLoading(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("GOOGLE REGISTER ERROR:", err);
+
       setError("Google registration failed. Please try again.");
       setGoogleLoading(false);
     }
@@ -83,6 +123,7 @@ export default function RegisterPage() {
 
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10 transition-colors dark:bg-gray-950">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg transition-colors dark:bg-gray-900">
+
           <h1 className="mb-2 text-center text-3xl font-bold text-green-700 dark:text-green-400">
             HelpingHands
           </h1>
@@ -92,8 +133,12 @@ export default function RegisterPage() {
           </p>
 
           <form onSubmit={handleRegister} className="space-y-5">
+
             <div>
-              <label className={labelClass}>Full Name</label>
+              <label className={labelClass}>
+                Full Name
+              </label>
+
               <input
                 type="text"
                 value={name}
@@ -106,7 +151,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Email Address</label>
+              <label className={labelClass}>
+                Email Address
+              </label>
+
               <input
                 type="email"
                 value={email}
@@ -119,7 +167,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Password</label>
+              <label className={labelClass}>
+                Password
+              </label>
+
               <input
                 type="password"
                 value={password}
@@ -132,7 +183,8 @@ export default function RegisterPage() {
               />
 
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Password must contain at least 6 characters.
+                Password must contain at least 6 characters,
+                including uppercase and lowercase letters.
               </p>
             </div>
 
@@ -154,14 +206,18 @@ export default function RegisterPage() {
             </button>
           </form>
 
+          {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+
             <span className="text-sm text-gray-500 dark:text-gray-400">
               OR
             </span>
+
             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
           </div>
 
+          {/* Google Register */}
           <button
             type="button"
             onClick={handleGoogleRegister}
@@ -178,25 +234,31 @@ export default function RegisterPage() {
                 fill="#EA4335"
                 d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
               />
+
               <path
                 fill="#4285F4"
                 d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.72 7.18l7.19 5.59c4.2-3.88 6.57-9.59 6.57-17.24Z"
               />
+
               <path
                 fill="#FBBC05"
                 d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"
               />
+
               <path
                 fill="#34A853"
                 d="M24 48c6.48 0 11.93-2.13 15.9-5.79l-7.19-5.59c-1.99 1.34-4.53 2.13-8.71 2.13-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 43.62 14.62 48 24 48Z"
               />
             </svg>
 
-            {googleLoading ? "Connecting..." : "Continue with Google"}
+            {googleLoading
+              ? "Connecting to Google..."
+              : "Continue with Google"}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
             Already have an account?{" "}
+
             <Link
               href="/login"
               className="font-semibold text-green-700 hover:underline dark:text-green-400"
