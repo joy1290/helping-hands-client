@@ -32,6 +32,9 @@ function EventDetailsContent() {
   const [error, setError] = useState("");
   const [joining, setJoining] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<
+    "success" | "error" | ""
+  >("");
   const [isJoined, setIsJoined] = useState(false);
 
   // Fetch event details
@@ -99,10 +102,12 @@ function EventDetailsContent() {
       return;
     }
 
-    if (joining) return;
+    // Prevent duplicate requests
+    if (joining || isJoined) return;
 
     setJoining(true);
     setMessage("");
+    setMessageType("");
 
     try {
       const data = await apiFetch(`/api/events/${id}/join`, {
@@ -129,12 +134,14 @@ function EventDetailsContent() {
       setMessage(
         data.message || "You joined this event successfully!"
       );
+      setMessageType("success");
     } catch (err) {
       setMessage(
         err instanceof Error
           ? err.message
           : "Something went wrong."
       );
+      setMessageType("error");
     } finally {
       setJoining(false);
     }
@@ -249,7 +256,11 @@ function EventDetailsContent() {
                   {message && (
                     <p
                       role="status"
-                      className="mt-4 rounded-lg bg-green-50 p-4 text-green-700 dark:bg-green-950 dark:text-green-300"
+                      className={`mt-4 rounded-lg p-4 ${
+                        messageType === "success"
+                          ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                          : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+                      }`}
                     >
                       {message}
                     </p>
