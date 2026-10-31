@@ -17,7 +17,9 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     setError("");
 
@@ -49,27 +51,25 @@ export default function RegisterPage() {
     }
   };
 
-  
+  const handleGoogleRegister = async () => {
+    setError("");
+    setGoogleLoading(true);
 
-const handleGoogleLogin = async () => {
-  setError("");
-  setGoogleLoading(true);
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
 
-  try {
-    const result = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "http://localhost:3000/",
-    });
-
-    if (result.error) {
-      setError(result.error.message || "Google login failed.");
+      if (result.error) {
+        setError(result.error.message || "Google registration failed.");
+        setGoogleLoading(false);
+      }
+    } catch {
+      setError("Google registration failed. Please try again.");
       setGoogleLoading(false);
     }
-  } catch {
-    setError("Google login failed. Please try again.");
-    setGoogleLoading(false);
-  }
-};
+  };
 
   const inputClass =
     "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-green-500 dark:focus:ring-green-900";
