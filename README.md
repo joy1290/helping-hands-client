@@ -82,11 +82,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📌 Project Purpose
 
-HelpingHands aims to encourage community participation, social responsibility, and collaboration by making it easier for people to organize and join meaningful social development events.
+<!-- HelpingHands aims to encourage community participation, social responsibility, and collaboration by making it easier for people to organize and join meaningful social development events. -->
 
 ## 👨‍💻 Developer
 
-**Joy Gopal Dhar**
+*Joy Gopal Dhar*
 
 - GitHub: [joy1290](https://github.com/joy1290)
 
