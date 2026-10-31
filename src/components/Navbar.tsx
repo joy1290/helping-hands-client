@@ -11,16 +11,15 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const user = session?.user;
-
-  const userName = user?.name || "User";
-  const userEmail = user?.email || "";
-  const userImage = user?.image;
-  const firstLetter = userName.charAt(0).toUpperCase();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,6 +37,13 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const user = mounted && !isPending ? session?.user : undefined;
+
+  const userName = user?.name || "User";
+  const userEmail = user?.email || "";
+  const userImage = user?.image;
+  const firstLetter = userName.charAt(0).toUpperCase();
 
   const closeMenus = () => {
     setIsOpen(false);
@@ -84,7 +90,7 @@ export default function Navbar() {
             Upcoming Events
           </Link>
 
-          {!isPending && (
+          {mounted && !isPending && (
             <>
               {user ? (
                 <>
@@ -142,7 +148,6 @@ export default function Navbar() {
                     {isOpen && (
                       <div className="absolute right-0 mt-3 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
 
-                        {/* User Information */}
                         <div className="border-b border-gray-100 p-4 dark:border-gray-700">
                           <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-green-700 text-xl font-bold text-white">
@@ -169,7 +174,6 @@ export default function Navbar() {
                           </div>
                         </div>
 
-                        {/* Private Navigation */}
                         <div className="p-2">
                           <Link
                             href="/profile"
@@ -204,7 +208,6 @@ export default function Navbar() {
                           </Link>
                         </div>
 
-                        {/* Logout */}
                         <div className="border-t border-gray-100 p-2 dark:border-gray-700">
                           <button
                             type="button"
@@ -304,7 +307,7 @@ export default function Navbar() {
               Upcoming Events
             </Link>
 
-            {!isPending && (
+            {mounted && !isPending && (
               <>
                 {user ? (
                   <>
@@ -325,6 +328,7 @@ export default function Navbar() {
                         <p className="truncate font-semibold">
                           {userName}
                         </p>
+
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                           {userEmail}
                         </p>
