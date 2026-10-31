@@ -81,7 +81,7 @@ export default function Home() {
       setLoading(true);
       setError("");
 
-      const data = await apiFetch("/api/events");
+      const data = await apiFetch("/api/events/home");
 
       if (!data.success || !Array.isArray(data.events)) {
         throw new Error("Invalid events response");

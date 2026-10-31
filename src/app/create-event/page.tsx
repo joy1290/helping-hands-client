@@ -7,6 +7,17 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { apiFetch } from "@/lib/api";
 
+const categories = [
+  "Education",
+  "Environment",
+  "Health",
+  "Animal Welfare",
+  "Community",
+  "Technology",
+  "Sports",
+  "Other",
+];
+
 export default function CreateEventPage() {
   const router = useRouter();
 
@@ -25,7 +36,14 @@ export default function CreateEventPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    setToday(new Date().toISOString().split("T")[0]);
+    const currentDate = new Date();
+    const localDate = [
+      currentDate.getFullYear(),
+      String(currentDate.getMonth() + 1).padStart(2, "0"),
+      String(currentDate.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    setToday(localDate);
   }, []);
 
   const handleChange = (
@@ -33,22 +51,102 @@ export default function CreateEventPage() {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
+    setMessage("");
+  };
+
+  const validateForm = () => {
+    const title = formData.title.trim();
+    const description = formData.description.trim();
+    const location = formData.location.trim();
+    const image = formData.image.trim();
+
+    if (title.length < 3) {
+      return "Event title must contain at least 3 characters.";
+    }
+
+    if (title.length > 100) {
+      return "Event title cannot exceed 100 characters.";
+    }
+
+    if (description.length < 10) {
+      return "Description must contain at least 10 characters.";
+    }
+
+    if (description.length > 1000) {
+      return "Description cannot exceed 1000 characters.";
+    }
+
+    if (location.length < 3) {
+      return "Location must contain at least 3 characters.";
+    }
+
+    if (location.length > 150) {
+      return "Location cannot exceed 150 characters.";
+    }
+
+    if (!categories.includes(formData.category)) {
+      return "Please select a valid event category.";
+    }
+
+    if (!formData.eventDate) {
+      return "Please select an event date.";
+    }
+
+    if (today && formData.eventDate <= today) {
+      return "Please select a future date for your event.";
+    }
+
+    try {
+      const imageURL = new URL(image);
+
+      if (!["http:", "https:"].includes(imageURL.protocol)) {
+        return "Please enter a valid image URL.";
+      }
+    } catch {
+      return "Please enter a valid image URL.";
+    }
+
+    return "";
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (loading) return;
+
     setMessage("");
+    setIsSuccess(false);
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setMessage(validationError);
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const eventData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        location: formData.location.trim(),
+        eventDate: formData.eventDate,
+        image: formData.image.trim(),
+        category: formData.category,
+      };
+
       await apiFetch("/api/events", {
         method: "POST",
         requiresAuth: true,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(eventData),
       });
 
       setIsSuccess(true);
@@ -57,16 +155,14 @@ export default function CreateEventPage() {
       setTimeout(() => {
         router.push("/events");
         router.refresh();
-      }, 1000);
+      }, 1200);
     } catch (error) {
       setIsSuccess(false);
-
       setMessage(
         error instanceof Error
           ? error.message
-          : "Something went wrong"
+          : "Something went wrong. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -98,42 +194,54 @@ export default function CreateEventPage() {
             className="space-y-6 rounded-2xl bg-white p-6 shadow-md transition-colors dark:bg-gray-900 sm:p-10"
           >
             <div>
-              <label className={labelClass}>Event Title</label>
+              <label htmlFor="title" className={labelClass}>
+                Event Title
+              </label>
               <input
+                id="title"
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter event title"
-                minLength={3}
+                maxLength={100}
                 required
                 className={inputClass}
               />
             </div>
 
             <div>
-              <label className={labelClass}>Description</label>
+              <label htmlFor="description" className={labelClass}>
+                Description
+              </label>
               <textarea
+                id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Describe your event..."
                 rows={5}
-                minLength={10}
+                maxLength={1000}
                 required
                 className={inputClass}
               />
+              <p className="mt-1 text-right text-xs text-gray-500">
+                {formData.description.length}/1000
+              </p>
             </div>
 
             <div>
-              <label className={labelClass}>Location</label>
+              <label htmlFor="location" className={labelClass}>
+                Location
+              </label>
               <input
+                id="location"
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="Enter event location"
-                minLength={3}
+                maxLength={150}
                 required
                 className={inputClass}
               />
@@ -141,8 +249,11 @@ export default function CreateEventPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <label className={labelClass}>Event Date</label>
+                <label htmlFor="eventDate" className={labelClass}>
+                  Event Date
+                </label>
                 <input
+                  id="eventDate"
                   type="date"
                   name="eventDate"
                   value={formData.eventDate}
@@ -154,8 +265,11 @@ export default function CreateEventPage() {
               </div>
 
               <div>
-                <label className={labelClass}>Category</label>
+                <label htmlFor="category" className={labelClass}>
+                  Category
+                </label>
                 <select
+                  id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
@@ -163,21 +277,21 @@ export default function CreateEventPage() {
                   className={inputClass}
                 >
                   <option value="">Select category</option>
-                  <option value="Education">Education</option>
-                  <option value="Environment">Environment</option>
-                  <option value="Health">Health</option>
-                  <option value="Animal Welfare">Animal Welfare</option>
-                  <option value="Community">Community</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Other">Other</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className={labelClass}>Event Image URL</label>
+              <label htmlFor="image" className={labelClass}>
+                Event Image URL
+              </label>
               <input
+                id="image"
                 type="url"
                 name="image"
                 value={formData.image}
@@ -191,6 +305,7 @@ export default function CreateEventPage() {
             {message && (
               <p
                 role="status"
+                aria-live="polite"
                 className={`rounded-lg p-3 text-sm ${
                   isSuccess
                     ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
